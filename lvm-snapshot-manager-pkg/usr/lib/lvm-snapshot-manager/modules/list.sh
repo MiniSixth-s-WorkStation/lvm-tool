@@ -23,13 +23,7 @@ DESCRIPTION_LIST_GROUPS_ZH="按時間戳記列出所有快照群組。"
 # Description (zh_TW): 'list' 指令的主功能。
 command_main() {
     local snapshot_data
-    snapshot_data=$(lvs --noheadings -o lv_name,origin,lv_size,snap_percent,lv_attr --separator=',' 2>/dev/null | awk -F',' '
-        substr($5, 1, 1) == "s" {
-            timestamp = $1;
-            sub(/.*_'"${SNAPSHOT_PREFIX}"'_/, "", timestamp);
-            printf "%s,%s,%s,%.2f,%s\n", $1, $2, $3, $4, timestamp;
-        }
-    ' | sort)
+    snapshot_data=$(core_get_snapshot_data)
 
     if [[ -z "$snapshot_data" ]]; then
         if [[ "$OUTPUT_FORMAT" == "json" ]]; then
@@ -55,32 +49,8 @@ command_main() {
             echo "$snapshot_data"
             ;;
         *)
-            echo ""
-            echo -e "${BLUE}$MSG_SNAPSHOT_LIST_HEADER${NC}"
-            echo "========================================================================================"
-            printf "%-35s %-15s %-10s %-12s %-15s\n" "Snapshot Name" "Origin LV" "Size" "Usage" "Timestamp"
-            echo "----------------------------------------------------------------------------------------"
-            
-            local formatted_output
-            formatted_output=$(echo "$snapshot_data" | while IFS=, read -r name origin size usage timestamp; do
-                local percent=$usage
-                local color_prefix='\033[0;32m' # GREEN
-                if (( $(echo "$percent > 80" | bc -l) )); then color_prefix='\033[0;31m'; fi # RED
-                if (( $(echo "$percent > 50 && $percent <= 80" | bc -l) )); then color_prefix='\033[0;33m'; fi # YELLOW
-                local color_suffix='\033[0m'
-                printf "%-35s,%-15s,%-10s,${color_prefix}%-12s${color_suffix},%s\n" "$name" "$origin" "$size" "${usage}%" "$timestamp"
-            done)
-
-            if [[ "$HAS_COLUMN" -eq 1 ]]; then
-                echo "$formatted_output" | column -t -s ','
-            else
-                echo "$formatted_output" | sed 's/,/\t/g'
-                if [[ -z "$COLUMN_WARN_SHOWN" ]]; then
-                    print_warning "$MSG_COLUMN_UTILITY_NOT_FOUND"
-                    COLUMN_WARN_SHOWN=1
-                fi
-            fi
-            echo "========================================================================================"
+            # Use the core function to display the data in a table
+            core_display_snapshot_data "$snapshot_data"
             ;;
     esac
 }

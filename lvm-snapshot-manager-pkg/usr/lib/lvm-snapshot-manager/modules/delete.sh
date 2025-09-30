@@ -92,9 +92,9 @@ command_delete_group() {
         return 1
     fi
     
-    local SNAPSHOTS
-    SNAPSHOTS=$(lvs --noheadings -o lv_name 2>/dev/null | grep "_${SNAPSHOT_PREFIX}_${timestamp}")
-    if [[ -z "$SNAPSHOTS" ]]; then
+    local snapshots
+    snapshots=$(lvs --noheadings -o lv_name 2>/dev/null | grep "_${SNAPSHOT_PREFIX}_${timestamp}")
+    if [[ -z "$snapshots" ]]; then
         print_error "No snapshots found for timestamp '${timestamp}'."
         return 1
     fi
@@ -103,7 +103,7 @@ command_delete_group() {
     echo "The following snapshots will be deleted:"
     while IFS= read -r snap; do
         echo -e "  ${RED}${snap}${NC}"
-    done <<< "$SNAPSHOTS"
+    done <<< "$snapshots"
     echo ""
     
     if [[ "$FORCE_MODE" -eq 0 && "$DRY_RUN" -eq 0 ]]; then
@@ -116,31 +116,6 @@ command_delete_group() {
         fi
     fi
 
-    if [[ "$DRY_RUN" -eq 1 ]]; then
-        print_info "--- Dry Run Mode ---"
-        print_success "Simulated deletion of snapshot group '${timestamp}'."
-        log_action "INFO" "[DryRun] Simulated deletion of snapshot group '${timestamp}'."
-        return
-    fi
-
-    log_action "WARN" "Attempting to delete snapshot group with timestamp '${timestamp}'."
-    local DELETE_COUNT=0
-    local FAIL_COUNT=0
-    for snap in $SNAPSHOTS; do
-        local cmd_args=()
-        if [[ "$FORCE_MODE" -eq 1 ]]; then
-            cmd_args+=("-f")
-        fi
-        if lvremove "${cmd_args[@]}" "/dev/${VG_NAME}/${snap}"; then
-            echo -e "${GREEN}  ✓ Deleted: ${snap}${NC}"
-            log_action "SUCCESS" "Snapshot '${snap}' from group '${timestamp}' deleted."
-            DELETE_COUNT=$((DELETE_COUNT + 1))
-        else
-            echo -e "${RED}  ✗ Failed to delete: ${snap}${NC}"
-            log_action "ERROR" "Failed to delete snapshot '${snap}' from group '${timestamp}'."
-            FAIL_COUNT=$((FAIL_COUNT + 1))
-        fi
-    done
-    echo ""
-    print_success "Snapshot group deletion complete. Succeeded: ${DELETE_COUNT}, Failed: ${FAIL_COUNT}"
+    # Call the core function to handle the actual deletion
+    core_delete_snapshot_group "$timestamp"
 }

@@ -151,10 +151,8 @@ command_purge() {
         FORCE_MODE=1
     fi
 
-    # Source the delete module to use its function
-    source "${LIB_DIR}/modules/delete.sh"
     for ts in "${timestamps_to_delete[@]}"; do
-        command_delete_group "$ts"
+        core_delete_snapshot_group "$ts"
     done
 
     FORCE_MODE=$original_force_mode

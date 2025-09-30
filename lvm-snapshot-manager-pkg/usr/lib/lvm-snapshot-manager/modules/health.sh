@@ -104,17 +104,24 @@ command_monitor() {
     echo -e "${BLUE}[Snapshot Monitor Mode]${NC} - Press Ctrl+C to exit"
     trap 'echo -e "\n${YELLOW}Monitoring stopped.${NC}"; exit 0' INT
     
-    # We need to source the list module to use its main function
-    # This is a temporary solution until a better way is found
-    source "${LIB_DIR}/modules/list.sh"
-
     while true; do
         clear
         print_header
         echo -e "${CYAN}Live Snapshot Status - $(date '+%Y-%m-%d %H:%M:%S')${NC}"
-        command_main # Calls the list command's main function
+        
+        # Call the core function to get and display snapshot data
+        local snapshot_data
+        snapshot_data=$(core_get_snapshot_data)
+        
+        if [[ -n "$snapshot_data" ]]; then
+            core_display_snapshot_data "$snapshot_data"
+        else
+            print_info "$MSG_NO_SNAPSHOTS_FOUND"
+        fi
+        
         echo ""
-        command_main # Calls the check-health command's main function
+        # Call the local check-health main function
+        command_main
         echo ""
         echo -e "${YELLOW}Hint: Consider extending or deleting snapshots with usage over 80%.${NC}"
         sleep 5
