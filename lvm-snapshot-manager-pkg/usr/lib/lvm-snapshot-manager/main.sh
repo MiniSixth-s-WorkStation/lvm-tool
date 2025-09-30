@@ -18,20 +18,27 @@ source "${LIB_DIR}/core.sh"
 declare -A MODULE_COMMANDS
 declare -A MODULE_DESCRIPTIONS
 declare -A MODULE_DESCRIPTIONS_ZH
-
+declare -A MODULE_CATEGORIES
+ 
 load_modules() {
     for module_file in "${LIB_DIR}/modules/"*.sh; do
         if [[ -f "$module_file" ]]; then
             # Source the module to read its command definitions
             source "$module_file"
             
+            local category="Snapshot Management" # Default category
+            if [[ -n "$MODULE_CATEGORY" ]]; then
+                category="$MODULE_CATEGORY"
+            fi
+
             # Assumes modules define COMMAND, DESCRIPTION, and DESCRIPTION_ZH
             if [[ -n "$COMMAND" ]]; then
                 MODULE_COMMANDS["$COMMAND"]="command_main"
                 MODULE_DESCRIPTIONS["$COMMAND"]="$DESCRIPTION"
                 MODULE_DESCRIPTIONS_ZH["$COMMAND"]="$DESCRIPTION_ZH"
+                MODULE_CATEGORIES["$COMMAND"]="$category"
             fi
-
+ 
             # Support for modules with multiple commands
             # e.g., list.sh has list and list-groups
             local multi_commands=$(grep -oP 'COMMAND_[A-Z_]+=' "$module_file" | sed 's/=$//')
@@ -47,15 +54,16 @@ load_modules() {
                 
                 # Function name convention: command_subcommand
                 local func_name="command_$(echo "$cmd_name_suffix" | sed 's/-/_/')"
-
+ 
                 MODULE_COMMANDS["$cmd_name"]="$func_name"
                 MODULE_DESCRIPTIONS["$cmd_name"]="$desc"
                 MODULE_DESCRIPTIONS_ZH["$cmd_name"]="$desc_zh"
+                MODULE_CATEGORIES["$cmd_name"]="$category"
             done
         fi
     done
 }
-
+ 
 # --- Override show_usage from core.sh to be dynamic ---
 # --- 覆寫 core.sh 的 show_usage 以使其動態化 ---
 show_usage() {
@@ -69,18 +77,31 @@ show_usage() {
     echo "      --force, --yes  Automatically answer 'yes' to confirmation prompts."
     echo "      --format FMT    Set output format for list commands (json, csv)."
     echo ""
-    echo -e "${GREEN}Available Commands:${NC}"
     
-    # Dynamically print commands from loaded modules
+    # Group commands by category
+    declare -A grouped_commands
     for cmd in "${!MODULE_COMMANDS[@]}"; do
-        local desc
-        if [[ "${LANG}" == "zh_TW"* ]]; then
-            desc="${MODULE_DESCRIPTIONS_ZH[$cmd]}"
-        else
-            desc="${MODULE_DESCRIPTIONS[$cmd]}"
-        fi
-        printf "  %-20s %s\n" "$cmd" "$desc"
+        local category="${MODULE_CATEGORIES[$cmd]:-Other}"
+        grouped_commands["$category"]+="$cmd "
     done
+
+    for category in "${!grouped_commands[@]}"; do
+        echo -e "${GREEN}${category}:${NC}"
+        for cmd in ${grouped_commands[$category]}; do
+            local desc
+            if [[ "${LANG}" == "zh_TW"* ]]; then
+                desc="${MODULE_DESCRIPTIONS_ZH[$cmd]}"
+            else
+                desc="${MODULE_DESCRIPTIONS[$cmd]}"
+            fi
+            printf "  %-20s %s\n" "$cmd" "$desc"
+        done
+        echo ""
+    done
+    echo ""
+
+    echo -e "${GREEN}Other Commands:${NC}"
+    printf "  %-20s %s\n" "interactive" "Enter interactive menu mode."
     echo ""
 }
 
@@ -181,6 +202,8 @@ main() {
         "$func_to_call" "${ARGS[@]}"
     elif [[ "$COMMAND" == "help" ]]; then
         show_usage
+    elif [[ "$COMMAND" == "interactive" ]]; then
+        interactive_mode
     else
         print_error "Unknown command: '$COMMAND'"
         show_usage
@@ -188,5 +211,81 @@ main() {
     fi
 }
 
+interactive_mode() {
+    while true; do
+        clear
+        print_header
+        echo "Interactive Mode"
+        echo "--------------------------"
+        echo "1) Snapshot Management"
+        echo "2) Volume Management"
+        echo "q) Quit"
+        echo "--------------------------"
+        read -p "Enter your choice: " choice
+
+        case "$choice" in
+            1) snapshot_menu ;;
+            2) volume_menu ;;
+            q) break ;;
+            *) echo "Invalid choice" ;;
+        esac
+        read -p "Press Enter to continue..."
+    done
+}
+
+snapshot_menu() {
+    while true; do
+        clear
+        print_header
+        echo "Snapshot Management"
+        echo "--------------------------"
+        echo "1) Create Snapshots"
+        echo "2) List Snapshots"
+        echo "3) Restore from Snapshot"
+        echo "b) Back to main menu"
+        echo "--------------------------"
+        read -p "Enter your choice: " choice
+
+        case "$choice" in
+            1) command_create ;;
+            2) command_list ;;
+            3) read -p "Enter timestamp to restore: " ts; command_restore "$ts" ;;
+            b) break ;;
+            *) echo "Invalid choice" ;;
+        esac
+        read -p "Press Enter to continue..."
+    done
+}
+
+volume_menu() {
+    while true; do
+        clear
+        print_header
+        echo "Volume Management"
+        echo "--------------------------"
+        echo "1) Show PVs"
+        echo "2) Show VGs"
+        echo "3) Show LVs"
+        echo "4) Create PV"
+        echo "5) Create VG"
+        echo "6) Create LV"
+        echo "b) Back to main menu"
+        echo "--------------------------"
+        read -p "Enter your choice: " choice
+
+        case "$choice" in
+            1) command_pvs ;;
+            2) command_vgs ;;
+            3) command_lvs ;;
+            4) read -p "Enter device path for new PV: " dev; command_pv_create "$dev" ;;
+            5) read -p "Enter VG name: " vg_name; read -p "Enter devices (space-separated): " devices; command_vg_create "$vg_name" $devices ;;
+            6) read -p "Enter VG name: " vg_name; read -p "Enter LV name: " lv_name; read -p "Enter size: " size; command_lv_create "$vg_name" "$lv_name" "$size" ;;
+            b) break ;;
+            *) echo "Invalid choice" ;;
+        esac
+        read -p "Press Enter to continue..."
+    done
+}
+ 
 # Pass all script arguments to main
 main "$@"

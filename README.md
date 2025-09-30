@@ -109,49 +109,59 @@ sudo ./lvm-snapshot-manager.sh [選項] [指令] [參數...]
 
 ### 指令說明
 
+#### 互動模式
+
+- **`interactive`**:
+  進入一個互動式的選單模式，讓您可以透過選單引導來執行大部分的管理任務，降低指令的記憶負擔。
+  ```bash
+  sudo ./lvm-snapshot-manager.sh interactive
+  ```
+
+#### 快照管理
+
 - **`create`**:
   為 `lvm.conf` 中設定的所有 LV 建立一組新的快照。
   ```bash
   sudo ./lvm-snapshot-manager.sh create
   ```
-
+ 
 - **`list`**:
   列出系統上所有由本工具管理的快照，包含其大小與目前使用率。可搭配 `--format` 選項變更輸出格式。
   ```bash
   sudo ./lvm-snapshot-manager.sh list
   sudo ./lvm-snapshot-manager.sh --format json list
   ```
-
+ 
 - **`list-groups`**:
   以時間戳為單位，列出所有快照組。可搭配 `--format` 選項變更輸出格式。
   ```bash
   sudo ./lvm-snapshot-manager.sh list-groups
   ```
-
+ 
 - **`restore <時間戳>`**:
   從指定的快照組還原。這是一個危險操作，請謹慎使用。
   ```bash
   sudo ./lvm-snapshot-manager.sh restore 20250926_103000
   ```
-
+ 
 - **`delete <快照名稱>`**:
   刪除一個指定的快照。
   ```bash
   sudo ./lvm-snapshot-manager.sh delete lv-www_snap_20250926_103000
   ```
-
+ 
 - **`delete-group <時間戳>`**:
   刪除與指定時間戳相關的所有快照。
   ```bash
   sudo ./lvm-snapshot-manager.sh delete-group 20250926_103000
   ```
-
+ 
 - **`extend <快照名稱> <增加的大小>`**:
   擴充一個現有快照的儲存空間。當快照使用率過高時非常有用。
   ```bash
   sudo ./lvm-snapshot-manager.sh extend lv-www_snap_20250926_103000 1G
   ```
-
+ 
 - **`purge [選項]`**:
   根據指定的條件清除舊的快照群組。
   - `--keep-last <N>`: 保留最新的 N 個快照群組。
@@ -160,31 +170,46 @@ sudo ./lvm-snapshot-manager.sh [選項] [指令] [參數...]
   # 刪除超過兩週，但保留最新的 5 個快照群組
   sudo ./lvm-snapshot-manager.sh purge --keep-last 5 --older-than 2w
   ```
-
+ 
 - **`monitor`**:
   進入即時監控模式，每 5 秒刷新一次快照狀態。
   ```bash
   sudo ./lvm-snapshot-manager.sh monitor
   ```
-
+ 
 - **`check-health`**:
   檢查所有快照的健康狀態，並對使用率過高的快照提出警告。
   ```bash
   sudo ./lvm-snapshot-manager.sh check-health
   ```
 
+#### 磁區管理
+
+- **`pvs`**: 顯示實體磁區 (PV) 的資訊。
+- **`vgs`**: 顯示磁碟區群組 (VG) 的資訊。
+- **`lvs`**: 顯示邏輯磁碟區 (LV) 的資訊。
+- **`pv-create <裝置路徑>`**: 在指定的裝置上建立一個 PV。
+- **`vg-create <VG名稱> <裝置1> [裝置2...]`**: 使用一個或多個 PV 建立一個 VG。
+- **`lv-create <VG名稱> <LV名稱> <大小>`**: 在指定的 VG 中建立一個 LV。
+- **`lv-extend <LV路徑> <增加的大小>`**: 擴充一個 LV 的大小。
+- **`lv-remove <LV路徑>`**: 刪除一個 LV。
+- **`vg-remove <VG名稱>`**: 刪除一個 VG。
+- **`pv-remove <裝置路徑>`**: 刪除一個 PV。
+
+#### 其他指令
+ 
 - **`config`**:
   進入互動式選單，方便地管理 `lvm.conf` 設定。
   ```bash
   sudo ./lvm-snapshot-manager.sh config
   ```
-
+ 
 - **`setup-logrotate`**:
   在 `/etc/logrotate.d/` 目錄下建立一個設定檔，用於自動管理本腳本的日誌檔案。
   ```bash
   sudo ./lvm-snapshot-manager.sh setup-logrotate
   ```
-
+ 
 - **`help`**:
   顯示說明訊息。
   ```bash
@@ -295,49 +320,59 @@ sudo ./lvm-snapshot-manager.sh [OPTIONS] [COMMAND] [ARGUMENTS...]
 
 ### Command Reference
 
+#### Interactive Mode
+
+- **`interactive`**:
+  Enters an interactive menu mode that guides you through most management tasks, reducing the need to memorize commands.
+  ```bash
+  sudo ./lvm-snapshot-manager.sh interactive
+  ```
+
+#### Snapshot Management
+ 
 - **`create`**:
   Creates a new set of snapshots for all LVs defined in `lvm.conf`.
   ```bash
   sudo ./lvm-snapshot-manager.sh create
   ```
-
+ 
 - **`list`**:
   Lists all snapshots managed by this tool on the system, including their size and current data usage. Can be used with the `--format` option to change the output.
   ```bash
   sudo ./lvm-snapshot-manager.sh list
   sudo ./lvm-snapshot-manager.sh --format json list
   ```
-
+ 
 - **`list-groups`**:
   Lists all snapshot groups, organized by timestamp. Can be used with the `--format` option to change the output.
   ```bash
   sudo ./lvm-snapshot-manager.sh list-groups
   ```
-
+ 
 - **`restore <TIMESTAMP>`**:
   Restores from a specified snapshot group. This is a destructive operation; use it with caution.
   ```bash
   sudo ./lvm-snapshot-manager.sh restore 20250926_103000
   ```
-
+ 
 - **`delete <SNAPSHOT_NAME>`**:
   Deletes a single specified snapshot.
   ```bash
   sudo ./lvm-snapshot-manager.sh delete lv-www_snap_20250926_103000
   ```
-
+ 
 - **`delete-group <TIMESTAMP>`**:
   Deletes all snapshots associated with the specified timestamp.
   ```bash
   sudo ./lvm-snapshot-manager.sh delete-group 20250926_103000
   ```
-
+ 
 - **`extend <SNAPSHOT_NAME> <SIZE_TO_ADD>`**:
   Extends the storage space of an existing snapshot. This is useful when a snapshot's data usage is getting high.
   ```bash
   sudo ./lvm-snapshot-manager.sh extend lv-www_snap_20250926_103000 1G
   ```
-
+ 
 - **`purge [OPTIONS]`**:
   Purges old snapshot groups based on specified criteria.
   - `--keep-last <N>`: Keep the N most recent snapshot groups.
@@ -346,31 +381,46 @@ sudo ./lvm-snapshot-manager.sh [OPTIONS] [COMMAND] [ARGUMENTS...]
   # Delete groups older than two weeks, but keep the 5 most recent ones
   sudo ./lvm-snapshot-manager.sh purge --keep-last 5 --older-than 2w
   ```
-
+ 
 - **`monitor`**:
   Enters real-time monitoring mode, refreshing snapshot status every 5 seconds.
   ```bash
   sudo ./lvm-snapshot-manager.sh monitor
   ```
-
+ 
 - **`check-health`**:
   Checks the health of all snapshots and warns about high data usage.
   ```bash
   sudo ./lvm-snapshot-manager.sh check-health
   ```
 
+#### Volume Management
+
+- **`pvs`**: Displays information about Physical Volumes (PVs).
+- **`vgs`**: Displays information about Volume Groups (VGs).
+- **`lvs`**: Displays information about Logical Volumes (LVs).
+- **`pv-create <DEVICE_PATH>`**: Creates a PV on the specified device.
+- **`vg-create <VG_NAME> <DEVICE_1> [DEVICE_2...]`**: Creates a VG from one or more PVs.
+- **`lv-create <VG_NAME> <LV_NAME> <SIZE>`**: Creates an LV in the specified VG.
+- **`lv-extend <LV_PATH> <SIZE_TO_ADD>`**: Extends the size of an LV.
+- **`lv-remove <LV_PATH>`**: Removes an LV.
+- **`vg-remove <VG_NAME>`**: Removes a VG.
+- **`pv-remove <DEVICE_PATH>`**: Removes a PV.
+
+#### Other Commands
+ 
 - **`config`**:
   Enters an interactive menu to conveniently manage the `lvm.conf` settings.
   ```bash
   sudo ./lvm-snapshot-manager.sh config
   ```
-
+ 
 - **`setup-logrotate`**:
   Creates a configuration file in `/etc/logrotate.d/` to automatically manage the script's log file.
   ```bash
   sudo ./lvm-snapshot-manager.sh setup-logrotate
   ```
-
+ 
 - **`help`**:
   Displays the help message.
   ```bash
