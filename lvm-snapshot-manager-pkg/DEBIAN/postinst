@@ -31,6 +31,13 @@ if [ -d /etc/bash_completion.d ]; then
     echo "Bash completion script installed."
 fi
 
+# Create cache directory and generate initial cache
+if [ -x /usr/bin/lvm-snapshot-manager ]; then
+    echo "Generating initial completion cache..."
+    # The command will create the directory /var/cache/lvm-snapshot-manager
+    /usr/bin/lvm-snapshot-manager _update_cache || echo "Could not generate initial cache. It will be generated on first use."
+fi
+
 echo "LVM Snapshot Manager has been installed."
 echo "Please edit /etc/lvm-snapshot-manager/lvm.conf to suit your environment."
 

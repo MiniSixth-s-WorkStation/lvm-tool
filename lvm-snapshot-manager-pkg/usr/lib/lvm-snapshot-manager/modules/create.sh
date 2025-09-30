@@ -152,4 +152,5 @@ command_main() {
     echo "==========================================================="
     
     execute_hook "$POST_CREATE_HOOK" "post-create" "$TIMESTAMP"
+    update_completion_cache
 }

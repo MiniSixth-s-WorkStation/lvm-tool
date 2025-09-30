@@ -264,4 +264,5 @@ command_main() {
     fi
     
     execute_hook "$POST_RESTORE_HOOK" "post-restore" "$TIMESTAMP"
+    update_completion_cache
 }

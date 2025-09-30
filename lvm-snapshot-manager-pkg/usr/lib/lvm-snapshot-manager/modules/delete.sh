@@ -69,6 +69,7 @@ command_main() {
     if lvremove "${cmd_args[@]}" "/dev/${VG_NAME}/${snapshot_name}"; then
         print_success "Snapshot '${snapshot_name}' has been deleted."
         log_action "SUCCESS" "Snapshot '${snapshot_name}' deleted successfully."
+        update_completion_cache
     else
         print_error "Failed to delete snapshot."
         log_action "ERROR" "Failed to delete snapshot '${snapshot_name}'."
@@ -118,4 +119,5 @@ command_delete_group() {
 
     # Call the core function to handle the actual deletion
     core_delete_snapshot_group "$timestamp"
+    update_completion_cache
 }

@@ -9,6 +9,12 @@ if [ -L /etc/bash_completion.d/lvm-snapshot-manager ]; then
     echo "Bash completion script removed."
 fi
 
+# Remove cache directory
+if [ -d /var/cache/lvm-snapshot-manager ]; then
+    rm -rf /var/cache/lvm-snapshot-manager
+    echo "Completion cache directory removed."
+fi
+
 # Ask the user if they want to remove the configuration files
 if [ "$1" = "remove" ]; then
     echo "Configuration files for lvm-snapshot-manager are located in /etc/lvm-snapshot-manager."

@@ -1,21 +1,37 @@
 # bash completion for lvm-snapshot-manager
 
+# --- Performance Note ---
+# The completion for 'delete', 'restore', and 'delete-group' queries LVM in
+# real-time using the 'lvs' command. This ensures the completion list is always
+# accurate, which is critical for a system management tool.
+#
+# For systems with a very large number of logical volumes, this might introduce
+# a minor delay. A potential future optimization could be to implement a caching
+# mechanism where the main script updates a cache file after snapshot operations,
+# and this completion script reads from that cache.
+#
+# The current real-time approach was chosen for its simplicity and robustness.
+
 _lvm_snapshot_manager_completions() {
     local cur prev words cword
     _get_comp_words_by_ref -n : cur prev words cword
 
-    # Define the main commands by scanning the modules, similar to the main script.
-    # This makes the completion script adaptive to new modules.
+    # --- Definitions ---
     local module_dir="/usr/lib/lvm-snapshot-manager/modules"
+    local cache_dir="/var/cache/lvm-snapshot-manager"
+    local snapshot_cache="${cache_dir}/snapshots"
+    local timestamp_cache="${cache_dir}/timestamps"
+    
+    # --- Dynamic Command Discovery ---
     local main_commands
     if [[ -d "$module_dir" ]]; then
         main_commands=$(grep -h -E '^(COMMAND|COMMAND_[A-Z_]+)=' "$module_dir"/*.sh | cut -d'=' -f2 | tr -d '"')
     fi
     
-    # Add other static commands and options
     local all_commands="$main_commands interactive help"
     local opts="-c --config --dry-run --force --yes --format -h --help"
 
+    # --- Main Completion Logic ---
     if [[ ${cword} -eq 1 ]]; then
         COMPREPLY=($(compgen -W "${all_commands} ${opts}" -- "${cur}"))
         return 0
@@ -31,17 +47,24 @@ _lvm_snapshot_manager_completions() {
             return 0
             ;;
         delete)
-            # List all logical volumes that are snapshots
             local snapshots
-            snapshots=$(lvs --noheadings -o lv_name,lv_attr 2>/dev/null | awk '$2 ~ /^s/ {print $1}')
+            if [[ -f "$snapshot_cache" ]]; then
+                snapshots=$(<"$snapshot_cache")
+            else
+                # Fallback to live query if cache is missing
+                snapshots=$(lvs --noheadings -o lv_name,lv_attr 2>/dev/null | awk '$2 ~ /^s/ {print $1}')
+            fi
             COMPREPLY=($(compgen -W "${snapshots}" -- "${cur}"))
             return 0
             ;;
         restore|delete-group)
-            # List unique timestamps from snapshot names
-            # Assumes default prefix "snap". A more robust script might parse the config.
             local timestamps
-            timestamps=$(lvs --noheadings -o lv_name 2>/dev/null | grep "_snap_" | sed "s/.*_snap_//" | sort -u)
+            if [[ -f "$timestamp_cache" ]]; then
+                timestamps=$(<"$timestamp_cache")
+            else
+                # Fallback to live query. Assumes default prefix "snap".
+                timestamps=$(lvs --noheadings -o lv_name 2>/dev/null | grep "_snap_" | sed "s/.*_snap_//" | sort -u)
+            fi
             COMPREPLY=($(compgen -W "${timestamps}" -- "${cur}"))
             return 0
             ;;
@@ -49,7 +72,7 @@ _lvm_snapshot_manager_completions() {
             ;;
     esac
 
-    # Default completion for commands
+    # --- Default Completion ---
     if [[ "$cur" == -* ]]; then
         COMPREPLY=($(compgen -W "${opts}" -- "${cur}"))
     else

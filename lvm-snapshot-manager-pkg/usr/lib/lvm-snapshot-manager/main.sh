@@ -204,6 +204,10 @@ main() {
         show_usage
     elif [[ "$COMMAND" == "interactive" ]]; then
         interactive_mode
+    elif [[ "$COMMAND" == "_update_cache" ]]; then
+        # Internal command for post-install script to generate initial cache
+        load_config "${CONFIG_FILE}"
+        update_completion_cache
     else
         print_error "Unknown command: '$COMMAND'"
         show_usage

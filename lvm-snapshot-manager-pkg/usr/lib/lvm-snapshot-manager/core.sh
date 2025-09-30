@@ -23,6 +23,9 @@ SCRIPT_PID=$$
 # SCRIPT_DIR is now LIB_DIR, pointing to the library location
 LIB_DIR=$(dirname "$(readlink -f "$0")")
 CONFIG_FILE="/etc/lvm-snapshot-manager/lvm.conf"
+CACHE_DIR="/var/cache/lvm-snapshot-manager"
+SNAPSHOT_CACHE_FILE="${CACHE_DIR}/snapshots"
+TIMESTAMP_CACHE_FILE="${CACHE_DIR}/timestamps"
 
 
 # --- Language and Text Functions ---
@@ -572,6 +575,8 @@ core_delete_snapshot_group() {
     else
         return 0 # Indicate success
     fi
+
+    update_completion_cache
 }
 
 
@@ -602,4 +607,49 @@ check_dependencies() {
         done
         exit 1
     fi
+}
+
+# ==============================================================================
+#                           Completion Cache Functions
+#                           補全快取功能
+# ==============================================================================
+
+# Function: Update the cache files used for bash completion.
+# Function (zh_TW): 更新用於 bash 補全的快取檔案。
+update_completion_cache() {
+    # Do not run during dry-run or if not running as root
+    if [[ "$DRY_RUN" -eq 1 || $EUID -ne 0 ]]; then
+        return
+    fi
+
+    # Ensure cache directory exists
+    if ! mkdir -p "$CACHE_DIR"; then
+        log_action "WARN" "Could not create cache directory ${CACHE_DIR}. Completion may be slow."
+        return
+    fi
+    chown root:root "$CACHE_DIR" 2>/dev/null || true
+    chmod 755 "$CACHE_DIR" 2>/dev/null || true
+
+    # Cache snapshot names
+    # The temp file ensures an atomic update, preventing the completion script
+    # from reading a partially written file.
+    local snap_tmp
+    snap_tmp=$(mktemp)
+    if lvs --noheadings -o lv_name,lv_attr 2>/dev/null | awk '$2 ~ /^s/ {print $1}' > "$snap_tmp"; then
+        mv "$snap_tmp" "$SNAPSHOT_CACHE_FILE"
+    else
+        rm -f "$snap_tmp"
+    fi
+
+    # Cache timestamps
+    local ts_tmp
+    ts_tmp=$(mktemp)
+    if lvs --noheadings -o lv_name 2>/dev/null | grep "_${SNAPSHOT_PREFIX}_" | sed "s/.*_${SNAPSHOT_PREFIX}_//" | sort -u > "$ts_tmp"; then
+        mv "$ts_tmp" "$TIMESTAMP_CACHE_FILE"
+    else
+        rm -f "$ts_tmp"
+    fi
+    
+    chmod 644 "${SNAPSHOT_CACHE_FILE}" "${TIMESTAMP_CACHE_FILE}" 2>/dev/null || true
+    log_action "INFO" "Bash completion cache updated."
 }
