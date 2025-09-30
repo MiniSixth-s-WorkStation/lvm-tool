@@ -1,0 +1,60 @@
+# bash completion for lvm-snapshot-manager
+
+_lvm_snapshot_manager_completions() {
+    local cur prev words cword
+    _get_comp_words_by_ref -n : cur prev words cword
+
+    # Define the main commands by scanning the modules, similar to the main script.
+    # This makes the completion script adaptive to new modules.
+    local module_dir="/usr/lib/lvm-snapshot-manager/modules"
+    local main_commands
+    if [[ -d "$module_dir" ]]; then
+        main_commands=$(grep -h -E '^(COMMAND|COMMAND_[A-Z_]+)=' "$module_dir"/*.sh | cut -d'=' -f2 | tr -d '"')
+    fi
+    
+    # Add other static commands and options
+    local all_commands="$main_commands interactive help"
+    local opts="-c --config --dry-run --force --yes --format -h --help"
+
+    if [[ ${cword} -eq 1 ]]; then
+        COMPREPLY=($(compgen -W "${all_commands} ${opts}" -- "${cur}"))
+        return 0
+    fi
+
+    case "${prev}" in
+        -c|--config)
+            _filedir
+            return 0
+            ;;
+        --format)
+            COMPREPLY=($(compgen -W "json csv" -- "${cur}"))
+            return 0
+            ;;
+        delete)
+            # List all logical volumes that are snapshots
+            local snapshots
+            snapshots=$(lvs --noheadings -o lv_name,lv_attr 2>/dev/null | awk '$2 ~ /^s/ {print $1}')
+            COMPREPLY=($(compgen -W "${snapshots}" -- "${cur}"))
+            return 0
+            ;;
+        restore|delete-group)
+            # List unique timestamps from snapshot names
+            # Assumes default prefix "snap". A more robust script might parse the config.
+            local timestamps
+            timestamps=$(lvs --noheadings -o lv_name 2>/dev/null | grep "_snap_" | sed "s/.*_snap_//" | sort -u)
+            COMPREPLY=($(compgen -W "${timestamps}" -- "${cur}"))
+            return 0
+            ;;
+        *)
+            ;;
+    esac
+
+    # Default completion for commands
+    if [[ "$cur" == -* ]]; then
+        COMPREPLY=($(compgen -W "${opts}" -- "${cur}"))
+    else
+        COMPREPLY=($(compgen -W "${all_commands}" -- "${cur}"))
+    fi
+}
+
+complete -F _lvm_snapshot_manager_completions lvm-snapshot-manager

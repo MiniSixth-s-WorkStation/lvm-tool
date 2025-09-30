@@ -3,6 +3,12 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
+# Remove bash completion link
+if [ -L /etc/bash_completion.d/lvm-snapshot-manager ]; then
+    rm -f /etc/bash_completion.d/lvm-snapshot-manager
+    echo "Bash completion script removed."
+fi
+
 # Ask the user if they want to remove the configuration files
 if [ "$1" = "remove" ]; then
     echo "Configuration files for lvm-snapshot-manager are located in /etc/lvm-snapshot-manager."

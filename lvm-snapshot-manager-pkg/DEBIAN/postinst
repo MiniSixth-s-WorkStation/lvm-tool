@@ -25,6 +25,12 @@ if [ ! -f /etc/lvm-snapshot-manager/lvm.conf ]; then
     generate_default_config /etc/lvm-snapshot-manager/lvm.conf
 fi
 
+# Setup bash completion
+if [ -d /etc/bash_completion.d ]; then
+    ln -sf /usr/share/bash-completion/completions/lvm-snapshot-manager /etc/bash_completion.d/lvm-snapshot-manager
+    echo "Bash completion script installed."
+fi
+
 echo "LVM Snapshot Manager has been installed."
 echo "Please edit /etc/lvm-snapshot-manager/lvm.conf to suit your environment."
 
