@@ -219,13 +219,13 @@ interactive_mode() {
     while true; do
         clear
         print_header
-        echo "Interactive Mode"
+        echo "$MSG_INTERACTIVE_MODE"
         echo "--------------------------"
-        echo "1) Snapshot Management"
-        echo "2) Volume Management"
-        echo "q) Quit"
+        echo "$MSG_SNAPSHOT_MANAGEMENT"
+        echo "$MSG_VOLUME_MANAGEMENT"
+        echo "$MSG_QUIT"
         echo "--------------------------"
-        read -p "Enter your choice: " choice
+        read -p "$MSG_ENTER_CHOICE" choice
 
         case "$choice" in
             1) snapshot_menu ;;
@@ -237,57 +237,153 @@ interactive_mode() {
     done
 }
 
+# --- Function: snapshot_menu ---
+# --- 功能: snapshot_menu ---
+# Description: Main menu for snapshot management.
+# Description (zh_TW): 快照管理的主選單。
 snapshot_menu() {
     while true; do
         clear
         print_header
-        echo "Snapshot Management"
+        echo "$MSG_SNAPSHOT_MENU_TITLE"
         echo "--------------------------"
-        echo "1) Create Snapshots"
-        echo "2) List Snapshots"
-        echo "3) Restore from Snapshot"
-        echo "b) Back to main menu"
+        echo "$MSG_CREATE_SNAPSHOTS"
+        echo "$MSG_LIST_SNAPSHOTS"
+        echo "$MSG_RESTORE_SNAPSHOT"
+        echo "$MSG_DELETE_SNAPSHOTS"
+        echo "$MSG_MAINTENANCE_HEALTH"
+        echo "$MSG_BACK_TO_MAIN_MENU"
         echo "--------------------------"
-        read -p "Enter your choice: " choice
+        read -p "$MSG_ENTER_CHOICE" choice
 
         case "$choice" in
             1) command_create ;;
-            2) command_list ;;
-            3) read -p "Enter timestamp to restore: " ts; command_restore "$ts" ;;
+            2) list_submenu ;;
+            3) read -p "$MSG_ENTER_TIMESTAMP_TO_RESTORE" ts; command_restore "$ts" ;;
+            4) delete_submenu ;;
+            5) maintenance_submenu ;;
             b) break ;;
-            *) echo "Invalid choice" ;;
+            *) echo "$MSG_INVALID_CHOICE" ;;
         esac
-        read -p "Press Enter to continue..."
+        [[ "$choice" != "b" ]] && read -p "$MSG_PRESS_ENTER_TO_CONTINUE"
     done
+}
+
+# --- Function: list_submenu ---
+# --- 功能: list_submenu ---
+# Description: Submenu for listing snapshots and groups.
+# Description (zh_TW): 列出快照與群組的子選單。
+list_submenu() {
+    clear
+    print_header
+    echo "$MSG_LIST_MENU_TITLE"
+    echo "--------------------------"
+    echo "$MSG_LIST_INDIVIDUAL"
+    echo "$MSG_LIST_GROUPS"
+    echo "--------------------------"
+    read -p "$MSG_ENTER_CHOICE" choice
+    case "$choice" in
+        1) command_list ;;
+        2) command_list_groups ;;
+        *) echo "$MSG_INVALID_CHOICE" ;;
+    esac
+}
+
+# --- Function: delete_submenu ---
+# --- 功能: delete_submenu ---
+# Description: Submenu for deleting snapshots.
+# Description (zh_TW): 刪除快照的子選單。
+delete_submenu() {
+    clear
+    print_header
+    echo "$MSG_DELETE_MENU_TITLE"
+    echo "--------------------------"
+    echo "$MSG_DELETE_SINGLE"
+    echo "$MSG_DELETE_GROUP"
+    echo "--------------------------"
+    read -p "$MSG_ENTER_CHOICE" choice
+    case "$choice" in
+        1) read -p "$MSG_ENTER_SNAPSHOT_NAME_TO_DELETE" name; command_main "$name" ;; # command_main from delete.sh
+        2) read -p "$MSG_ENTER_TIMESTAMP_TO_DELETE" ts; command_delete_group "$ts" ;;
+        *) echo "$MSG_INVALID_CHOICE" ;;
+    esac
+}
+
+# --- Function: maintenance_submenu ---
+# --- 功能: maintenance_submenu ---
+# Description: Submenu for maintenance tasks like health checks and purging.
+# Description (zh_TW): 維護任務（如健康檢查、清除）的子選單。
+maintenance_submenu() {
+    while true; do
+        clear
+        print_header
+        echo "$MSG_MAINTENANCE_MENU_TITLE"
+        echo "--------------------------"
+        echo "$MSG_CHECK_HEALTH"
+        echo "$MSG_PURGE_SNAPSHOTS"
+        echo "$MSG_EXTEND_SNAPSHOT"
+        echo "$MSG_BACK_TO_SNAPSHOT_MENU"
+        echo "--------------------------"
+        read -p "$MSG_ENTER_CHOICE" choice
+
+        case "$choice" in
+            1) command_main ;; # command_main from health.sh
+            2) purge_submenu ;;
+            3) read -p "$MSG_ENTER_SNAPSHOT_NAME_TO_EXTEND" name; read -p "$MSG_ENTER_SIZE_TO_ADD" size; command_extend "$name" "$size" ;;
+            b) break ;;
+            *) echo "$MSG_INVALID_CHOICE" ;;
+        esac
+        [[ "$choice" != "b" ]] && read -p "$MSG_PRESS_ENTER_TO_CONTINUE"
+    done
+}
+
+# --- Function: purge_submenu ---
+# --- 功能: purge_submenu ---
+# Description: Submenu for purging old snapshots.
+# Description (zh_TW): 清除舊快照的子選單。
+purge_submenu() {
+    clear
+    print_header
+    echo "$MSG_PURGE_MENU_TITLE"
+    echo "--------------------------"
+    echo "$MSG_PURGE_BY_COUNT"
+    echo "$MSG_PURGE_BY_AGE"
+    echo "--------------------------"
+    read -p "$MSG_ENTER_CHOICE" choice
+    case "$choice" in
+        1) read -p "$MSG_ENTER_PURGE_COUNT" num; command_purge "--keep-last" "$num" ;;
+        2) read -p "$MSG_ENTER_PURGE_AGE" age; command_purge "--older-than" "$age" ;;
+        *) echo "$MSG_INVALID_CHOICE" ;;
+    esac
 }
 
 volume_menu() {
     while true; do
         clear
         print_header
-        echo "Volume Management"
+        echo "$MSG_VOLUME_MENU_TITLE"
         echo "--------------------------"
-        echo "1) Show PVs"
-        echo "2) Show VGs"
-        echo "3) Show LVs"
-        echo "4) Create PV"
-        echo "5) Create VG"
-        echo "6) Create LV"
-        echo "b) Back to main menu"
+        echo "$MSG_SHOW_PVS"
+        echo "$MSG_SHOW_VGS"
+        echo "$MSG_SHOW_LVS"
+        echo "$MSG_CREATE_PV"
+        echo "$MSG_CREATE_VG"
+        echo "$MSG_CREATE_LV"
+        echo "$MSG_BACK_TO_MAIN_MENU"
         echo "--------------------------"
-        read -p "Enter your choice: " choice
+        read -p "$MSG_ENTER_CHOICE" choice
 
         case "$choice" in
             1) command_pvs ;;
             2) command_vgs ;;
             3) command_lvs ;;
-            4) read -p "Enter device path for new PV: " dev; command_pv_create "$dev" ;;
-            5) read -p "Enter VG name: " vg_name; read -p "Enter devices (space-separated): " devices; command_vg_create "$vg_name" $devices ;;
-            6) read -p "Enter VG name: " vg_name; read -p "Enter LV name: " lv_name; read -p "Enter size: " size; command_lv_create "$vg_name" "$lv_name" "$size" ;;
+            4) read -p "$MSG_ENTER_DEVICE_FOR_PV" dev; command_pv_create "$dev" ;;
+            5) read -p "$MSG_ENTER_VG_NAME" vg_name; read -p "$MSG_ENTER_DEVICES" devices; command_vg_create "$vg_name" $devices ;;
+            6) read -p "$MSG_ENTER_VG_NAME" vg_name; read -p "$MSG_ENTER_LV_NAME" lv_name; read -p "$MSG_ENTER_SIZE" size; command_lv_create "$vg_name" "$lv_name" "$size" ;;
             b) break ;;
-            *) echo "Invalid choice" ;;
+            *) echo "$MSG_INVALID_CHOICE" ;;
         esac
-        read -p "Press Enter to continue..."
+        read -p "$MSG_PRESS_ENTER_TO_CONTINUE"
     done
 }
  
