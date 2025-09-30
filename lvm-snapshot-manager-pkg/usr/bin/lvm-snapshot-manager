@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# ==============================================================================
+# Script Name: lvm-snapshot-manager
+# Description: Entry point for the LVM Snapshot Manager.
+#              Executes the main logic script.
+# Description (zh_TW): LVM 快照管理員的進入點。
+#                      執行主要的邏輯腳本。
+# ==============================================================================
+
+# The main script is installed in the lib directory
+MAIN_SCRIPT="/usr/lib/lvm-snapshot-manager/main.sh"
+
+# Execute the main script, passing all command-line arguments
+exec "$MAIN_SCRIPT" "$@"

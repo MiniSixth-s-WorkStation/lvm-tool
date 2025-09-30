@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# Exit immediately if a command exits with a non-zero status.
+set -e
+
+# Ask the user if they want to remove the configuration files
+if [ "$1" = "remove" ]; then
+    echo "Configuration files for lvm-snapshot-manager are located in /etc/lvm-snapshot-manager."
+    read -p "Do you want to remove them? [y/N] " -r choice
+    if [[ "$choice" =~ ^[Yy]$ ]]; then
+        echo "Removing configuration directory /etc/lvm-snapshot-manager..."
+        rm -rf /etc/lvm-snapshot-manager
+    fi
+fi
+
+exit 0

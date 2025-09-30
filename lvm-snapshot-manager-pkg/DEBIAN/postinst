@@ -1,0 +1,32 @@
+#!/bin/bash
+
+# Exit immediately if a command exits with a non-zero status.
+set -e
+
+# Set permissions for the main executable
+chmod 755 /usr/bin/lvm-snapshot-manager
+
+# Set permissions for the library scripts
+chmod 755 /usr/lib/lvm-snapshot-manager/*.sh
+chmod 755 /usr/lib/lvm-snapshot-manager/modules/*.sh
+
+# Create the configuration directory if it doesn't exist
+mkdir -p /etc/lvm-snapshot-manager
+
+# If no config file exists, create a default one
+if [ ! -f /etc/lvm-snapshot-manager/lvm.conf ]; then
+    # We need to temporarily source the core library to use its functions
+    source /usr/lib/lvm-snapshot-manager/core.sh
+    
+    # Load language files to get messages for the config generation
+    load_language
+    
+    # Generate the default config
+    generate_default_config /etc/lvm-snapshot-manager/lvm.conf
+fi
+
+echo "LVM Snapshot Manager has been installed."
+echo "Please edit /etc/lvm-snapshot-manager/lvm.conf to suit your environment."
+
+# Final exit
+exit 0

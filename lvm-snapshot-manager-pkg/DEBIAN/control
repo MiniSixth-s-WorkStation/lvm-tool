@@ -1,0 +1,9 @@
+Package: lvm-snapshot-manager
+Version: 1.0.0
+Architecture: all
+Maintainer: MiniSixth <service@minisixth.com>
+Depends: bash, lvm2, util-linux, coreutils, gawk, bc
+Description: A comprehensive utility for managing LVM snapshots.
+ A modular and robust command-line tool to create, restore, list,
+ monitor, and delete LVM snapshots. It supports configuration files,
+ multi-language output, and health checks.
